@@ -1,15 +1,15 @@
-const utils = require('./utils.js')
-const enums = require('./enums.js')
+import { assignArrayToObj, interpretField, parseContainers, pad, Interpreter, InterpreterMapper } from './utils'
+import { EfmProdukt, efmProdukt, idTypes, orgId, sBlockTypes, tarifpunkt } from './enums'
 
 // ################
 // DATA TYPES
 // ################
 
-const STRING = (x) => x.toString()
-const HEX = (x) => x.toString('hex')
-const STR_INT = (x) => parseInt(x.toString(), 10)
-const INT = (x) => x.readUIntBE(0, x.length)
-const DB_DATETIME = (x) => {
+const STRING = (x: Buffer): string => x.toString()
+const HEX = (x: Buffer): string => x.toString('hex')
+const STR_INT = (x: Buffer): number => parseInt(x.toString(), 10)
+const INT = (x: Buffer): number => x.readUIntBE(0, x.length)
+const DB_DATETIME = (x: Buffer): Date => {
   // DDMMYYYYHHMM
   const day = STR_INT(x.slice(0, 2))
   const month = STR_INT(x.slice(2, 4)) - 1
@@ -18,9 +18,9 @@ const DB_DATETIME = (x) => {
   const minute = STR_INT(x.slice(10, 12))
   return new Date(year, month, day, hour, minute)
 }
-const KA_DATETIME = (x) => {
+const KA_DATETIME = (x: Buffer): Date => {
   // ‘yyyyyyymmmmddddd’B + hhhhhmmmmmmsssss’B  (4 Byte)
-  const dateStr = utils.pad(parseInt(x.toString('hex'), 16).toString(2), 32)
+  const dateStr = pad(parseInt(x.toString('hex'), 16).toString(2), 32)
   const year = parseInt(dateStr.slice(0, 7), 2) + 1990
   const month = parseInt(dateStr.slice(7, 11), 2) - 1
   const day = parseInt(dateStr.slice(11, 16), 2)
@@ -30,31 +30,36 @@ const KA_DATETIME = (x) => {
   return new Date(year, month, day, hour, minute, sec)
 }
 
-const ORG_ID = (x) => {
+const ORG_ID = (x: Buffer): string => {
   const id = INT(x)
-  return enums.org_id(id)
+  return orgId(id)
 }
 
-const EFM_PRODUKT = (x) => {
+const EFM_PRODUKT = (x: Buffer): EfmProdukt => {
   const orgId = INT(x.slice(2, 4))
   const produktNr = INT(x.slice(0, 2))
-  return enums.efm_produkt(orgId, produktNr)
+  return efmProdukt(orgId, produktNr)
 }
-const AUSWEIS_TYP = (x) => {
+const AUSWEIS_TYP = (x: Buffer): string => {
   const number = STR_INT(x)
-  return enums.id_types.get(number).key
+  return idTypes[number]
 }
 
-const DC_LISTE = (x) => {
-  const res = {}
-  res.dc_length = INT(x.slice(1, 2))
-  res.typ_DC = HEX(x.slice(2, 3))
-  res.pv_org_id = INT(x.slice(3, 5))
-  const TP = splitDCList(res.dc_length, res.typ_DC, x.slice(5, x.length))
-  // FIXIT: ADD A PARSER
-  res.TP = TP.map((item) => enums.tarifpunkt(res.pv_org_id, item))
+export interface DcListe {
+  dc_length: number
+  typ_DC: string
+  pv_org_id: number
+  TP: string[]
+}
 
-  return res
+const DC_LISTE = (x: Buffer): DcListe => {
+  const dc_length = INT(x.slice(1, 2))
+  const typ_DC = HEX(x.slice(2, 3))
+  const pv_org_id = INT(x.slice(3, 5))
+  const TP = splitDCList(dc_length, typ_DC, x.slice(5, x.length))
+    .map((item) => tarifpunkt(pv_org_id, item))
+
+  return { dc_length, typ_DC, pv_org_id, TP }
 }
 
 const EFS_FIELDS = [
@@ -68,9 +73,11 @@ const EFS_FIELDS = [
   ['sam_seqno', 4, INT],
   ['lengthList_DC', 1, INT],
   ['Liste_DC', null, DC_LISTE]
-]
+] as const
 
-const EFS_DATA = (x) => {
+export type EfsData = Record<number, InterpreterMapper<(typeof EFS_FIELDS)[number]>>
+
+const EFS_DATA = (x: Buffer): EfsData => {
   const lengthListDC = INT(x.slice(25, 26))
   const t = []
   if (lengthListDC + 26 < x.length) {
@@ -79,22 +86,19 @@ const EFS_DATA = (x) => {
   } else {
     t.push(x.slice(0, lengthListDC + 26))
   }
-  const res = {}
+  const res: EfsData = {}
   t.forEach((ticket, index) => {
-    res[1 + index] = utils.interpretField(ticket, EFS_FIELDS)
+    res[1 + index] = interpretField(ticket, EFS_FIELDS)
   })
   return res
 }
 
-function splitDCList (dcLength, typDC, data) {
+function splitDCList (dcLength: number, typDC: string, data: Buffer): number[] {
   // 0x0D 3 Byte CT, CM
   // 0x10 2 Byte Länder,SWT, QDL
-  let SEP
-  if (parseInt(typDC, 16) === 0x10) {
-    SEP = 2
-  } else {
-    SEP = 3
-  }
+  const SEP = parseInt(typDC, 16) === 0x10
+    ? 2
+    : 3
   const amount = (dcLength - 3) / SEP
   const res = []
   for (let i = 0; i < amount; i++) {
@@ -103,21 +107,31 @@ function splitDCList (dcLength, typDC, data) {
   return res
 }
 
-function interpretRCT2Block (data) {
-  const res = {}
-  res.line = parseInt(data.slice(0, 2).toString(), 10)
-  res.column = parseInt(data.slice(2, 4).toString(), 10)
-  res.height = parseInt(data.slice(4, 6).toString(), 10)
-  res.width = parseInt(data.slice(6, 8).toString(), 10)
-  res.style = parseInt(data.slice(8, 9).toString(), 10)
+export interface RCT2Block {
+  line: number
+  column: number
+  height: number
+  width: number
+  style: number
+  value: string
+}
+
+function interpretRCT2Block (data: Buffer): [RCT2Block, Buffer] {
   const length = parseInt(data.slice(9, 13).toString(), 10)
-  res.value = data.slice(13, 13 + length).toString()
+  const res = {
+    line: parseInt(data.slice(0, 2).toString(), 10),
+    column: parseInt(data.slice(2, 4).toString(), 10),
+    height: parseInt(data.slice(4, 6).toString(), 10),
+    width: parseInt(data.slice(6, 8).toString(), 10),
+    style: parseInt(data.slice(8, 9).toString(), 10),
+    value: data.slice(13, 13 + length).toString()
+  }
   const rem = data.slice(13 + length)
   return [res, rem]
 }
 
-const RCT2_BLOCKS = (x) => {
-  return utils.parseContainers(x, interpretRCT2Block)
+const RCT2_BLOCKS = (x: Buffer): RCT2Block[] => {
+  return parseContainers(x, interpretRCT2Block)
 }
 
 const A_BLOCK_FIELDS_V2 = [
@@ -126,50 +140,66 @@ const A_BLOCK_FIELDS_V2 = [
   ['valid_from', 8, STRING],
   ['valid_to', 8, STRING],
   ['serial', 8, STRING]
-]
+] as const
 
 const A_BLOCK_FIELDS_V3 = [
   ['valid_from', 8, STRING],
   ['valid_to', 8, STRING],
   ['serial', 10, STRING]
-]
+] as const
 
-function interpretSingleSBlock (data) {
-  const res = {}
-  const type = enums.sBlockTypes.get(parseInt(data.slice(1, 4).toString(), 10))
+export type SingleSBlock = {
+  [Key in keyof typeof sBlockTypes]?: string
+}
+
+function interpretSingleSBlock (data: Buffer): [SingleSBlock, Buffer] {
+  const number = parseInt(data.slice(1, 4).toString(), 10)
+  const type = sBlockTypes[number]
   const length = parseInt(data.slice(4, 8).toString(), 10)
-  res[type] = data.slice(8, 8 + length).toString()
+  const res: SingleSBlock = {
+    [type]: data.slice(8, 8 + length).toString()
+  }
   const rem = data.slice(8 + length)
   return [res, rem]
 }
 
-const auftraegeSBlocksV2 = (x) => {
+export type AuftraegeSblocks = {
+  auftrag_count: number
+  sblock_amount: number
+  sblocks: Record<string, unknown>
+} & {
+  [key in `auftrag_${number}`]: unknown
+}
+
+const auftraegeSBlocksV2 = (x: Buffer): AuftraegeSblocks => {
   const A_LENGTH = 11 + 11 + 8 + 8 + 8
   return auftraegeSblocks(x, A_LENGTH, A_BLOCK_FIELDS_V2)
 }
 
-const auftraegeSBlocksV3 = (x) => {
+const auftraegeSBlocksV3 = (x: Buffer): AuftraegeSblocks => {
   const A_LENGTH = 10 + 8 + 8
   return auftraegeSblocks(x, A_LENGTH, A_BLOCK_FIELDS_V3)
 }
 
-function auftraegeSblocks (x, A_LENGTH, fields) {
-  const res = {}
-  res.auftrag_count = parseInt(x.slice(0, 1).toString(), 10)
-  for (let i = 0; i < res.auftrag_count; i++) {
-    const bez = `auftrag_${i + 1}`
-    res[bez] = utils.interpretField(x.slice(1 + (i * A_LENGTH), (i + 1) * A_LENGTH + 1), fields)
+function auftraegeSblocks (x: Buffer, A_LENGTH: number, fields: Readonly<Interpreter[]>): AuftraegeSblocks {
+  const auftrag_count = parseInt(x.slice(0, 1).toString(), 10)
+  const sblock_amount = parseInt(x.slice(A_LENGTH * auftrag_count + 1, A_LENGTH * auftrag_count + 3).toString(), 10)
+  const sblocks = assignArrayToObj(parseContainers(x.slice(A_LENGTH * auftrag_count + 3), interpretSingleSBlock))
+
+  const res: {
+    [key in `auftrag_${number}`]: unknown
+  } = {}
+  for (let i = 0; i < auftrag_count; i++) {
+    res[`auftrag_${i + 1}`] = interpretField(x.slice(1 + (i * A_LENGTH), (i + 1) * A_LENGTH + 1), fields)
   }
-  res.sblock_amount = parseInt(x.slice(A_LENGTH * res.auftrag_count + 1, A_LENGTH * res.auftrag_count + 3).toString(), 10)
-  res.sblocks = utils.assignArrayToObj(utils.parseContainers(x.slice(A_LENGTH * res.auftrag_count + 3), interpretSingleSBlock))
-  return res
+  return { auftrag_count, sblock_amount, sblocks, ...res }
 }
 
 // ################
 // DATA FIELDS
 // ################
 
-module.exports = [{
+const DATA_FIELDS = [{
   name: 'U_HEAD',
   versions: {
     '01': [
@@ -265,4 +295,9 @@ module.exports = [{
       ['rct2_blocks', null, RCT2_BLOCKS]
     ]
   }
-}]
+}] as const
+
+export type DataFieldNames = (typeof DATA_FIELDS)[number]['name']
+export type DataFieldVersions = keyof (typeof DATA_FIELDS)[number]['versions']
+
+export default DATA_FIELDS

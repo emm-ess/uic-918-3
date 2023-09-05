@@ -1,19 +1,22 @@
-const chai = require('chai')
+import chai from 'chai'
+import chaiThings from 'chai-things'
 
-chai.use(require('chai-things'))
+import bt from '../src/block-types'
+
+chai.use(chaiThings)
 // chai.use(require('chai-properties'))
 chai.should()
 
-const bt = require('../lib/block-types')
-
-describe('block-types.js', () => {
+describe('block-types', () => {
   it('should return an array', () => {
     bt.should.be.an('array')
   })
   it('should only return objects inside the array with a property of name', () => {
+    // @ts-ignore
     bt.should.all.have.property('name')
   })
   it('should only return objects inside the array with a property of versions', () => {
+    // @ts-ignore
     bt.should.all.have.property('versions')
   })
   describe('Generic Types', () => {
@@ -35,6 +38,7 @@ describe('block-types.js', () => {
     })
     describe('STR_INT', () => {
       it('should return a number from a Buffer encoded string', () => {
+        // @ts-ignore
         const res = bt.filter(typ => (typ.name === 'U_TLAY'))[0].versions['01'][1][2]
         const testValue = 1234
         const testValueBuf = Buffer.from(testValue.toString(10))
@@ -54,19 +58,15 @@ describe('block-types.js', () => {
   })
   describe('Special Types', () => {
     describe('EFS_DATA', () => {
-      let res
-      let res2
-      let resDc10
-      before((done) => {
-        const fn = bt.filter(typ => (typ.name === '0080VU'))[0].versions['01'][4][2]
-        const testBuf = Buffer.from('130791f0187407d018763821000138221800000000130791f008dc060d18767a131c', 'hex')
-        const testBufDc10 = Buffer.from('130791f0187407d018763821000138221800000000130791f008dc061018767a131c', 'hex')
-        const doubleTestBuf = Buffer.from('130791f0187407d018763821000138221800000000130791f008dc060d18767a131c130791f0187407d018763821000138221800000000130791f008dc060d18767a131c', 'hex')
-        res = fn(testBuf)
-        res2 = fn(doubleTestBuf)
-        resDc10 = fn(testBufDc10)
-        done()
-      })
+      // @ts-ignore
+      const fn = bt.filter(typ => (typ.name === '0080VU'))[0].versions['01'][4][2]
+      const testBuf = Buffer.from('130791f0187407d018763821000138221800000000130791f008dc060d18767a131c', 'hex')
+      const testBufDc10 = Buffer.from('130791f0187407d018763821000138221800000000130791f008dc061018767a131c', 'hex')
+      const doubleTestBuf = Buffer.from('130791f0187407d018763821000138221800000000130791f008dc060d18767a131c130791f0187407d018763821000138221800000000130791f008dc060d18767a131c', 'hex')
+      const res = fn(testBuf)
+      const res2 = fn(doubleTestBuf)
+      const resDc10 = fn(testBufDc10)
+
       it('should return an object', () => {
         res.should.be.an('object')
       })
@@ -88,6 +88,7 @@ describe('block-types.js', () => {
       })
     })
     describe('RCT2_TEST_DATA', () => {
+      // @ts-ignore
       const fn = bt.filter(typ => (typ.name === 'U_TLAY'))[0].versions['01'][2][2]
       const RCT2_TEST_DATA = Buffer.from('303030303031373130303031384d617274696e61204d75737465726d616e6e3031303030313731303030313654616765735469636b657420506c757330323030303137313030303239507265697373747566652031302c2056474e20476573616d747261756d3033303030313731303030333332372e30352e323031372030303a30302d32392e30352e323031372030333a30303035303030313731303030313030312e30312e31393930', 'hex')
       const result = fn(RCT2_TEST_DATA)
@@ -115,6 +116,7 @@ describe('block-types.js', () => {
       })
     })
     describe('auftraegeSblocks_V3', () => {
+      // @ts-ignore
       const fn = bt.filter(typ => (typ.name === '0080BL'))[0].versions['03'][1][2]
       const TEST_DATA = Buffer.from('313031303132303138303130313230313832373839343134353200313653303031303030395370617270726569735330303230303031325330303330303031415330303930303036312d312d3439533031323030303130533031343030303253325330313530303035526965736153303136303031344ec3bc726e626572672b4369747953303231303033304e562a4c2d4862662031353a343820494345313531332d494345313731335330323330303133446f656765204672616e6369735330323630303032313353303238303031334672616e63697323446f656765533033313030313030312e30312e32303138533033323030313030312e30312e32303138533033353030303531303239375330333630303033323834', 'hex')
       const result = fn(TEST_DATA)
@@ -131,6 +133,7 @@ describe('block-types.js', () => {
         })
       })
       describe('auftraegeSblocks_V3.sblocks', () => {
+        // @ts-ignore
         const fn = bt.filter(typ => (typ.name === '0080BL'))[0].versions['03'][1][2]
         const TEST_DATA = Buffer.from('313031303132303138303130313230313832373839343134353200313653303031303030395370617270726569735330303230303031325330303330303031415330303930303036312d312d3439533031323030303130533031343030303253325330313530303035526965736153303136303031344ec3bc726e626572672b4369747953303231303033304e562a4c2d4862662031353a343820494345313531332d494345313731335330323330303133446f656765204672616e6369735330323630303032313353303238303031334672616e63697323446f656765533033313030313030312e30312e32303138533033323030313030312e30312e32303138533033353030303531303239375330333630303033323834', 'hex')
         const result = fn(TEST_DATA)
@@ -140,6 +143,7 @@ describe('block-types.js', () => {
       })
     })
     describe('auftraegeSblocks_V2', () => {
+      // @ts-ignore
       const fn = bt.filter(typ => (typ.name === '0080BL'))[0].versions['02'][1][2]
       const TEST_DATA = Buffer.from('3130313233343536373839213031323334353637383921303130343230313830313034323031383031303432303138313653303031303030395370617270726569735330303230303031325330303330303031415330303930303036312d312d3439533031323030303130533031343030303253325330313530303035526965736153303136303031344ec3bc726e626572672b4369747953303231303033304e562a4c2d4862662031353a343820494345313531332d494345313731335330323330303133446f656765204672616e6369735330323630303032313353303238303031334672616e63697323446f656765533033313030313030312e30312e32303138533033323030313030312e30312e32303138533033353030303531303239375330333630303033323834', 'hex')
       const result = fn(TEST_DATA)
@@ -159,6 +163,7 @@ describe('block-types.js', () => {
       })
     })
     describe('AUSWEIS_TYP', () => {
+      // @ts-ignore
       const fn = bt.filter(typ => (typ.name === '0080ID'))[0].versions['01'][0][2]
       const TEST_DATA = Buffer.from('09')
       const result = fn(TEST_DATA)

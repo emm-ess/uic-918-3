@@ -1,22 +1,46 @@
-const fs = require('fs')
-const path = require('path')
-const axios = require('axios')
-const _ = require('lodash')
-const xml2js = require('xml2js')
-const parser = new xml2js.Parser()
+import fs from 'fs'
+import path from 'path'
+import axios from 'axios'
+import _ from 'lodash'
+import xml2js from 'xml2js'
 
-const myConsoleLog = require('./utils.js').myConsoleLog
-const { url, fileName } = require('./cert_url.json')
+import { myConsoleLog } from './utils'
+import { url, fileName } from './cert_url.json'
+
 const basePath = path.dirname(require.resolve('./cert_url.json'))
 const filePath = path.join(basePath, fileName)
 
-const updateLocalCerts = () => {
-  myConsoleLog(`Load public keys from ${url} ...`)
-  axios.get(url)
+const parser = new xml2js.Parser()
+
+export interface Certificate {
+  issuerName: string[]
+  issuerCode: string[]
+  versionType: string[]
+  signatureAlgorithm: string[]
+  id: string[]
+  publicKey: string[]
+  barcodeVersion: string[]
+  startDate: string[]
+  endDate: string[]
+  barcodeXsd: string[]
+  allowedProductOwnerCodes: string[]
+  keyForged: string[]
+  commentForEncryptionType: string[]
+}
+
+interface KeyFile {
+  keys: {
+    key: Certificate[]
+  }
+}
+
+export function updateLocalCerts (urlToLoad = url) {
+  myConsoleLog(`Load public keys from ${urlToLoad} ...`)
+  axios.get(urlToLoad)
     .then((response) => {
-      parser.parseString(response.data, function (err, result) {
+      parser.parseString(response.data, (err, result) => {
       /* istanbul ignore else */
-        if (!err) {
+        if (err == null) {
           fs.writeFileSync(filePath, JSON.stringify(result))
           myConsoleLog(`Loaded ${result.keys.key.length} public keys and saved under "${filePath}".`)
         } else {
@@ -44,12 +68,12 @@ const updateLocalCerts = () => {
     })
 }
 
-const openLocalFiles = (useRemote = true) => {
-  return new Promise(function (resolve, reject) {
+async function openLocalFiles (): Promise<KeyFile> {
+  return await new Promise((resolve, reject) => {
     // const filePath = path.join(__dirname, '../', fileName)
-    fs.readFile(filePath, 'utf8', function (err, data) {
+    fs.readFile(filePath, 'utf8', (err, data) => {
       /* istanbul ignore else */
-      if (!err) {
+      if (err == null) {
         resolve(JSON.parse(data))
       } else {
         reject(err)
@@ -58,10 +82,10 @@ const openLocalFiles = (useRemote = true) => {
   })
 }
 
-const selectCert = (keys, orgId, keyId) => {
-  return new Promise(function (resolve, reject) {
+async function selectCert (keys: KeyFile, orgId: number, keyId: number): Promise<Certificate> {
+  return await new Promise((resolve, reject) => {
     const cert = _.find(keys.keys.key, { issuerCode: [orgId.toString()], id: [keyId.toString()] })
-    if (cert) {
+    if (cert != null) {
       resolve(cert)
     } else {
       reject(Error('Not Found!'))
@@ -69,13 +93,11 @@ const selectCert = (keys, orgId, keyId) => {
   })
 }
 
-const getCertByID = (orgId, keyId) => {
-  return new Promise(function (resolve, reject) {
+export async function getCertByID (orgId: number, keyId: number): Promise<Certificate> {
+  return await new Promise((resolve, reject) => {
     openLocalFiles()
-      .then(keys => selectCert(keys, orgId, keyId))
+      .then(async keys => await selectCert(keys, orgId, keyId))
       .then(cert => resolve(cert))
       .catch(err => reject(err))
   })
 }
-
-module.exports = { updateLocalCerts, getCertByID }

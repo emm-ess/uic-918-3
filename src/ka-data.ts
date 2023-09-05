@@ -171,64 +171,67 @@ const DB_ORTE = {
   8000260: '8000260 (Würzburg Hbf)',
   8000266: '8000266 (Wuppertal Hbf)',
   8010397: '8010397 (Zwickau(Sachs)Hbf)'
-}
+} as const
 
-module.exports = {
-  org_id: {
-    5000: '5000 (VDV E-Ticket Service)',
-    6262: '6262 (DB Fernverkehr)',
-    6263: '6263 (DB Regio Zentrale)',
-    6260: '6260 (DB Vertrieb GmbH)'
+export const ORG_ID = {
+  5000: '5000 (VDV E-Ticket Service)',
+  6262: '6262 (DB Fernverkehr)',
+  6263: '6263 (DB Regio Zentrale)',
+  6260: '6260 (DB Vertrieb GmbH)'
+} as const
+
+export const EFM_PRODUKTE = {
+  6262: {
+    2000: '2000 (City-Ticket)'
   },
-  efmprodukte: {
-    6262: {
-      2000: '2000 (City-Ticket)'
-    },
-    6263: {
-      1000: '1000 (City-mobil Einzelfahrt)',
-      1001: '1001 (City-mobil Tageskarte)',
-      1002: '1002 (Baden-Württemberg-Ticket)',
-      1004: '1004 (Baden-Württemberg-Ticket Nacht)',
-      1005: '1005 (Bayern-Ticket)',
-      1007: '1007 (Bayern-Ticket-Nacht)',
-      1008: '1008 (Brandenburg-Berlin-Ticket)',
-      1009: '1009 (Brandenburg-Berlin-Ticket-Nacht)',
-      1010: '1010 (Mecklenburg-Vorpommern-Ticket)',
-      1011: '1011 (Niedersachsen-Ticket)',
-      1012: '1012 (Rheinland-Pfalz-Ticket)',
-      1013: '1013 (Rheinland-Pfalz-Ticket-Nacht)',
-      1014: '1014 (Saarland-Ticket)',
-      1015: '1015 (Saarland-Ticket-Nacht)',
-      1016: '1016 (Sachsen-Anhalt-Ticket)',
-      1017: '1017 (Sachsen-Ticket)',
-      1018: '1018 (Schleswig-Holstein-Ticket)',
-      1019: '1019 (Thüringen-Ticket)',
-      1200: '1200 (Schönes-Wochenende-Ticket)',
-      1201: '1201 (Quer-Durchs-Land-Ticket)',
-      1020: '1020 (Rheinland-Pfalz-Ticket + Luxemburg)'
-    }
-  },
-  tarifpunkte: {
-    5000: {
-      1: '1 (Bundesrepublik gesamt)',
-      2: '2 (Baden-Württemberg)',
-      3: '3 (Bayern)',
-      4: '4 (Berlin)',
-      5: '5 (Brandenburg)',
-      6: '6 (Bremen)',
-      7: '7 (Hamburg)',
-      8: '8 (Hessen)',
-      9: '9 (Mecklenburg-Vorpommern)',
-      10: '10 (Niedersachsen)',
-      11: '11 (Nordrhein-Westfalen)',
-      12: '12 (Rheinland-Pfalz)',
-      13: '13 (Saarland)',
-      14: '14 (Sachsen)',
-      15: '15 (Sachsen-Anhalt)',
-      16: '16 (Schleswig-Holstein)',
-      17: '17 (Thüringen)'
-    },
-    6262: DB_ORTE,
-    6263: DB_ORTE
+  6263: {
+    1000: '1000 (City-mobil Einzelfahrt)',
+    1001: '1001 (City-mobil Tageskarte)',
+    1002: '1002 (Baden-Württemberg-Ticket)',
+    1004: '1004 (Baden-Württemberg-Ticket Nacht)',
+    1005: '1005 (Bayern-Ticket)',
+    1007: '1007 (Bayern-Ticket-Nacht)',
+    1008: '1008 (Brandenburg-Berlin-Ticket)',
+    1009: '1009 (Brandenburg-Berlin-Ticket-Nacht)',
+    1010: '1010 (Mecklenburg-Vorpommern-Ticket)',
+    1011: '1011 (Niedersachsen-Ticket)',
+    1012: '1012 (Rheinland-Pfalz-Ticket)',
+    1013: '1013 (Rheinland-Pfalz-Ticket-Nacht)',
+    1014: '1014 (Saarland-Ticket)',
+    1015: '1015 (Saarland-Ticket-Nacht)',
+    1016: '1016 (Sachsen-Anhalt-Ticket)',
+    1017: '1017 (Sachsen-Ticket)',
+    1018: '1018 (Schleswig-Holstein-Ticket)',
+    1019: '1019 (Thüringen-Ticket)',
+    1200: '1200 (Schönes-Wochenende-Ticket)',
+    1201: '1201 (Quer-Durchs-Land-Ticket)',
+    1020: '1020 (Rheinland-Pfalz-Ticket + Luxemburg)'
   }
-}
+} as const
+
+export const TARIFPUNKTE = {
+  5000: {
+    1: '1 (Bundesrepublik gesamt)',
+    2: '2 (Baden-Württemberg)',
+    3: '3 (Bayern)',
+    4: '4 (Berlin)',
+    5: '5 (Brandenburg)',
+    6: '6 (Bremen)',
+    7: '7 (Hamburg)',
+    8: '8 (Hessen)',
+    9: '9 (Mecklenburg-Vorpommern)',
+    10: '10 (Niedersachsen)',
+    11: '11 (Nordrhein-Westfalen)',
+    12: '12 (Rheinland-Pfalz)',
+    13: '13 (Saarland)',
+    14: '14 (Sachsen)',
+    15: '15 (Sachsen-Anhalt)',
+    16: '16 (Schleswig-Holstein)',
+    17: '17 (Thüringen)'
+  },
+  6262: DB_ORTE,
+  6263: DB_ORTE
+} as const
+
+export type Tarifpunkte = typeof TARIFPUNKTE
+export type TarifpunkteKey = keyof Tarifpunkte

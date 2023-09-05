@@ -1,12 +1,13 @@
-const chai = require('chai')
-const chaiAsPromised = require('chai-as-promised')
-const fs = require('fs')
+import chai from 'chai'
+import chaiAsPromised from 'chai-as-promised'
+import fs from 'fs'
+
+import {readBarcode} from '../src'
+
 chai.use(chaiAsPromised)
 chai.should()
 
-const main = require('../index')
-
-describe('index.js', () => {
+describe('index', () => {
   describe('index.readBarcode', () => {
     describe('...when inputis a local file', () => {
       const dummy = 'test/images/barcode-dummy2.png'
@@ -14,19 +15,19 @@ describe('index.js', () => {
       const dummy4 = 'test/images/CT-003.png'
       const falseDummy = 'test/images/barcode dummy.png'
       it('should return an object on sucess', () => {
-        return main.readBarcode(dummy).should.eventually.be.an('object')
+        return readBarcode(dummy).should.eventually.be.an('object')
       })
       it('should eventually be resolved', () => {
-        return main.readBarcode(dummy).should.eventually.be.fulfilled
+        return readBarcode(dummy).should.eventually.be.fulfilled
       })
       it('should reject if file not found', () => {
-        return main.readBarcode(falseDummy).should.be.rejected
+        return readBarcode(falseDummy).should.be.rejected
       })
       it('should handle verifySignature option and resolve', async () => {
         // eventually.have.deep.property('thing.foo', 'bar')
         // return Promise.resolve({ foo: 'bar' }).should.eventually.have.property('foo')
         // return (Promise.resolve({isSignatureValid: true})).should.eventually.have.deep.property('isSignatureValid', true)
-        return main.readBarcode(dummy4, { verifySignature: true }).should.eventually.have.property('isSignatureValid')
+        return readBarcode(dummy4, { verifySignature: true }).should.eventually.have.property('isSignatureValid')
       })
     })
     describe('...when input is an image buffer', () => {
@@ -34,27 +35,27 @@ describe('index.js', () => {
       // const dummy3Buff = fs.readFileSync('test/images/barcode-dummy3.png')
       const dummy4Buff = fs.readFileSync('test/images/CT-003.png')
       it('should return an object on sucess', () => {
-        return main.readBarcode(dummyBuff).should.eventually.be.an('object')
+        return readBarcode(dummyBuff).should.eventually.be.an('object')
       })
       it('should eventually be resolved', () => {
-        return main.readBarcode(dummyBuff).should.eventually.be.fulfilled
+        return readBarcode(dummyBuff).should.eventually.be.fulfilled
       })
       it('should handle verifySignature option and resolve', async () => {
         // eventually.have.deep.property('thing.foo', 'bar')
         // return Promise.resolve({ foo: 'bar' }).should.eventually.have.property('foo')
         // return (Promise.resolve({isSignatureValid: true})).should.eventually.have.deep.property('isSignatureValid', true)
-        return main.readBarcode(dummy4Buff, { verifySignature: true }).should.eventually.have.property('isSignatureValid')
+        return readBarcode(dummy4Buff, { verifySignature: true }).should.eventually.have.property('isSignatureValid')
       })
     })
     describe('...when input is something else', () => {
       it('should reject if input is array', () => {
-        return main.readBarcode([1, 2, 3]).should.be.rejected
+        return readBarcode([1, 2, 3]).should.be.rejected
       })
       it('should reject if input is object', () => {
-        return main.readBarcode({ nr: 3 }).should.be.rejected
+        return readBarcode({ nr: 3 }).should.be.rejected
       })
       it('should reject if input is null', () => {
-        return main.readBarcode().should.be.rejected
+        return readBarcode().should.be.rejected
       })
     })
   })

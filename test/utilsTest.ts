@@ -1,10 +1,17 @@
-const chai = require('chai')
+import chai from 'chai'
+
+import {
+  arrayDefinedAndNotEmpty,
+  assignArrayToObj,
+  interpretField,
+  pad,
+  parseContainers,
+  stringifyBufferObj,
+} from '../src/utils'
 
 chai.should()
 
-const utils = require('../lib/utils')
-
-describe('utils.js', () => {
+describe('utils', () => {
   describe('utils.stringifyBufferObj', () => {
     const str = 'Hello World!'
     const str2 = 'Hello World!!!!!'
@@ -13,7 +20,7 @@ describe('utils.js', () => {
       b: 123,
       c: Buffer.from(str2)
     }
-    const result = utils.stringifyBufferObj(obj)
+    const result = stringifyBufferObj(obj)
     it('should return an object where all buffer values would be converted to string values', () => {
       result.a.should.be.equal(str)
       result.c.should.be.equal(str2)
@@ -31,24 +38,22 @@ describe('utils.js', () => {
   describe('utils.interpretField', () => {
     it('should return an object', () => {
       const data = Buffer.from('Test')
-      const fields = []
-      const result = utils.interpretField(data, fields)
+      const result = interpretField(data, [])
       result.should.be.an('object')
     })
     it('should return an empty object if fields is an empty arry', () => {
       const data = Buffer.from('Test')
-      const fields = []
-      const result = utils.interpretField(data, fields)
+      const result = interpretField(data, [])
       result.should.be.empty // eslint-disable-line no-unused-expressions
     })
     it('should parse a buffer using a given data field specification', () => {
       const data = Buffer.from([0x14, 0x14, 0x06, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21])
       const fields = [
-        ['TAG', 2, (x) => x.toString('hex')],
+        ['TAG', 2, (x: Buffer) => x.toString('hex')],
         ['LENGTH', 1],
-        ['TEXT', null, (x) => x.toString()]
-      ]
-      const result = utils.interpretField(data, fields)
+        ['TEXT', null, (x: Buffer) => x.toString()]
+      ] as const
+      const result = interpretField(data, fields)
       result.TAG.should.be.equal('1414')
       result.LENGTH.should.be.deep.equal(Buffer.from('06', 'hex'))
       result.TEXT.should.be.equal('Hello!')
@@ -56,11 +61,11 @@ describe('utils.js', () => {
     it('should parse a buffer using a given data field specification', () => {
       const data = Buffer.from([0x14, 0x14, 0x06, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21])
       const fields = [
-        ['TAG', 2, (x) => x.toString('hex')],
+        ['TAG', 2, (x: Buffer) => x.toString('hex')],
         ['LENGTH', 1],
-        ['TEXT', null, (x) => x.toString()]
-      ]
-      const result = utils.interpretField(data, fields)
+        ['TEXT', null, (x: Buffer) => x.toString()]
+      ] as const
+      const result = interpretField(data, fields)
       result.TAG.should.be.equal('1414')
       result.LENGTH.should.be.deep.equal(Buffer.from('06', 'hex'))
       result.TEXT.should.be.equal('Hello!')
@@ -68,52 +73,51 @@ describe('utils.js', () => {
   })
 
   describe('utils.parseContainers', () => {
-    let results
+    let results!: string[]
     beforeEach((done) => {
       const data = Buffer.from('Test')
-      const f = (buf) => {
-        const ret = []
-        ret.push(buf.slice(0, 1).toString())
-        ret.push(buf.slice(1))
-        return ret
-      }
-      results = utils.parseContainers(data, f)
+      const f = (buf: Buffer): [string, Buffer] => [
+        buf.slice(0, 1).toString(),
+        buf.slice(1),
+      ]
+      results = parseContainers(data, f)
       done()
     })
     it('should return an array', () => {
+      // @ts-ignore
       results.should.be.a('array')
     })
     it('should parse the values with the given logic in the function', () => {
+      // @ts-ignore
       results.should.be.deep.equal(['T', 'e', 's', 't'])
     })
   })
 
   describe('utils.pad', () => {
     it('should return a string', () => {
-      utils.pad(12, 4).should.be.a('string')
+      pad(12, 4).should.be.a('string')
     })
     it('should return a string with the give length', () => {
       const len = 12
-      utils.pad(12, len).length.should.be.equal(len)
+      pad(12, len).length.should.be.equal(len)
     })
     it('should return a string respresentation of a number with leading zeros', () => {
-      utils.pad(12, 4).should.be.equal('0012')
+      pad(12, 4).should.be.equal('0012')
     })
     it('should return a string respresentation of a hexstring with leading zeros', () => {
-      utils.pad('11', 4).should.be.equal('0011')
+      pad('11', 4).should.be.equal('0011')
     })
   })
 
   describe('utils.arrayDefinedAndNotEmpty', () => {
     it('should return true on array with items', () => {
-      utils.arrayDefinedAndNotEmpty([1, 2, 3]).should.be.true // eslint-disable-line no-unused-expressions
+      arrayDefinedAndNotEmpty([1, 2, 3]).should.be.true // eslint-disable-line no-unused-expressions
     })
     it('should return false on array without items', () => {
-      utils.arrayDefinedAndNotEmpty([]).should.be.false // eslint-disable-line no-unused-expressions
+      arrayDefinedAndNotEmpty([]).should.be.false // eslint-disable-line no-unused-expressions
     })
     it('should return false on undefined input', () => {
-      let input
-      utils.arrayDefinedAndNotEmpty(input).should.be.false // eslint-disable-line no-unused-expressions
+      arrayDefinedAndNotEmpty(undefined).should.be.false // eslint-disable-line no-unused-expressions
     })
   })
   describe('utils.assignArrayToObj', () => {
@@ -122,7 +126,7 @@ describe('utils.js', () => {
       { thats: 's' },
       { a: 'test' }
     ]
-    const result = utils.assignArrayToObj(TEST_DATA)
+    const result = assignArrayToObj(TEST_DATA)
 
     it('should return an object', () => {
       result.should.be.an('object')

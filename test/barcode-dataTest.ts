@@ -1,29 +1,32 @@
-const chai = require('chai')
+import chai from 'chai'
+
+import { dummyTicket } from './helper'
+
+import interpretBarcode, {type TicketDataContainer} from '../src/barcode-data'
 chai.should()
-
-const helper = require('./helper')
-
-const interpretBarcode = require('../lib/barcode-data')
 
 describe('barcode-data', () => {
   describe('barcode-data.interpret', () => {
     it('should return an object', () => {
-      const ticket = helper.dummyTicket('U_HEAD', '01', 'Hi!')
+      const ticket = dummyTicket('U_HEAD', '01', 'Hi!')
       interpretBarcode(ticket).should.be.an('object')
     })
     it('should return an empty array if input param is an empty buffer.', () => {
+      // @ts-ignore
       interpretBarcode(Buffer.from('')).ticketContainers.should.be.an('array')
+      // @ts-ignore
       interpretBarcode(Buffer.from('')).ticketContainers.should.be.empty // eslint-disable-line no-unused-expressions
     })
 
     describe('on unknown data fields', () => {
-      let results
+      let results!: TicketDataContainer[]
       beforeEach((done) => {
-        const ticket = helper.dummyTicket('MYID!!', '01', 'Test')
+        const ticket = dummyTicket('MYID!!', '01', 'Test')
         results = interpretBarcode(ticket).ticketContainers
         done()
       })
       it('should ignore unkown data fields', () => {
+        // @ts-ignore
         results.should.not.be.empty // eslint-disable-line no-unused-expressions
       })
       it('should parse the unknown container id', () => {
@@ -34,13 +37,14 @@ describe('barcode-data', () => {
       })
     })
     describe('on unknown data fieds versions but known id', () => {
-      let results
+      let results!: TicketDataContainer[]
       beforeEach((done) => {
-        const ticket = helper.dummyTicket('U_HEAD', '03', 'Test')
+        const ticket = dummyTicket('U_HEAD', '03', 'Test')
         results = interpretBarcode(ticket).ticketContainers
         done()
       })
       it('should ignore unkown versions of data fields', () => {
+        // @ts-ignore
         results.should.not.be.empty // eslint-disable-line no-unused-expressions
       })
       it('should parse the unknown container id', () => {

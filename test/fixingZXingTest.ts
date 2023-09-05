@@ -1,10 +1,11 @@
-const chai = require('chai')
+import chai from 'chai'
+import randomstring from 'randomstring'
+
+import fixingZXing from '../src/fixingZXing'
+
 chai.should()
-const randomstring = require('randomstring')
 
-const fixingZXing = require('../lib/fixingZXing')
-
-describe('fixingZXing.js', function () {
+describe('fixingZXing', () => {
   it('should return a buffer', () => {
     const str = randomstring.generate({
       length: 12,
