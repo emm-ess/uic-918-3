@@ -1,4 +1,4 @@
-import zlib from 'zlib'
+import pako from 'pako'
 
 // Array with objects
 import BLOCK_TYPES, { DataFieldNames, DataFieldVersions } from './block-types'
@@ -42,8 +42,10 @@ function getTicketDataRaw (data: Buffer): Buffer {
 }
 
 function getTicketDataUncompressed (data: Buffer): Buffer {
+  console.error('HERE - HERE - HERE')
   if (data?.length > 0) {
-    return zlib.unzipSync(data)
+    // return zlib.unzipSync(data)
+    return Buffer.from(pako.inflate(data))
   } else {
     return data
   }
@@ -106,7 +108,10 @@ export default function (data: Buffer): Ticket {
   const signature = getSignature(data)
   const ticketDataLength = getTicketDataLength(data)
   const ticketDataRaw = getTicketDataRaw(data)
+  console.log('BEFRE')
   const ticketDataUncompressed = getTicketDataUncompressed(ticketDataRaw)
+  console.log('after')
   const ticketContainers = parseContainers(ticketDataUncompressed, interpretTicketContainer)
+  console.log('after 2')
   return { header, signature, ticketDataLength, ticketDataRaw, ticketDataUncompressed, ticketContainers }
 }
