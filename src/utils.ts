@@ -1,5 +1,5 @@
-export function stringifyBufferObj <T extends Record<string, Buffer | any>> (obj: T): {
-  [K in keyof T]: T[K] extends Buffer ? string : T[K]
+export function stringifyBufferObj <T extends Record<string, Uint8Array | any>> (obj: T): {
+  [K in keyof T]: T[K] extends Uint8Array ? string : T[K]
 } {
   for (const key in obj) {
     if (Buffer.isBuffer(obj[key])) {
@@ -10,17 +10,17 @@ export function stringifyBufferObj <T extends Record<string, Buffer | any>> (obj
   return obj
 }
 
-export type Interpreter = Readonly<[string, number | null] | [string, number | null, (buffer: Buffer) => any]>
+export type Interpreter = Readonly<[string, number | null] | [string, number | null, (buffer: Uint8Array) => any]>
 
 export type InterpreterMapper<T extends Interpreter> = {
-  [key in T[0]]: T[2] extends (buffer: Buffer) => infer R ? R : Buffer
+  [key in T[0]]: T[2] extends (buffer: Uint8Array) => infer R ? R : Uint8Array
 }
 
-export function interpretField<T extends Interpreter> (data: Buffer, fields: Readonly<T[]>): InterpreterMapper<T> {
+export function interpretField<T extends Interpreter> (data: Uint8Array, fields: Readonly<T[]>): InterpreterMapper<T> {
   let remainder = data
   // @ts-expect-error
   return Object.fromEntries(fields.map((f) => {
-    const interpretFunction = f[2] || ((x: Buffer): Buffer => x)
+    const interpretFunction = f[2] || ((x: Uint8Array): Uint8Array => x)
     let value
     if (f[1]) {
       value = interpretFunction(remainder.slice(0, f[1]))
@@ -32,7 +32,7 @@ export function interpretField<T extends Interpreter> (data: Buffer, fields: Rea
   }))
 }
 
-export function parseContainers <R> (data: Buffer, f: (arg: Buffer) => [R, Buffer]): R[] {
+export function parseContainers <R> (data: Uint8Array, f: (arg: Uint8Array) => [R, Uint8Array]): R[] {
   // f is a function which returns an array with a interpreted value from data and the remaining data as the second item
   let remainder = data
   const containers = []

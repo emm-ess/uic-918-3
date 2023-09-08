@@ -5,22 +5,43 @@ import { EfmProdukt, efmProdukt, idTypes, orgId, sBlockTypes, tarifpunkt } from 
 // DATA TYPES
 // ################
 
-const STRING = (x: Buffer): string => x.toString()
-const HEX = (x: Buffer): string => x.toString('hex')
-const STR_INT = (x: Buffer): number => parseInt(x.toString(), 10)
-const INT = (x: Buffer): number => x.readUIntBE(0, x.length)
-const DB_DATETIME = (x: Buffer): Date => {
+const decoder = new TextDecoder()
+
+export function uint8ArrayToString (x: Uint8Array): string {
+  return decoder.decode(x)
+}
+
+export function uint8ArrayToHex (x: Uint8Array): string {
+  return x.reduce((sum, part) => {
+    sum += part.toString(16).padStart(2, '0')
+    return sum
+  }, '')
+}
+
+export function uin8ArrayToIntViaString (x: Uint8Array, radix = 10): number {
+  return parseInt(decoder.decode(x), radix)
+}
+export function uint8ArrayToInt (x: Uint8Array): number {
+  return x.reduce((sum, part) => {
+    sum <<= 8
+    sum += part
+    return sum
+  }, 0)
+}
+
+const DB_DATETIME = (x: Uint8Array): Date => {
   // DDMMYYYYHHMM
-  const day = STR_INT(x.slice(0, 2))
-  const month = STR_INT(x.slice(2, 4)) - 1
-  const year = STR_INT(x.slice(4, 8))
-  const hour = STR_INT(x.slice(8, 10))
-  const minute = STR_INT(x.slice(10, 12))
+  const day = uin8ArrayToIntViaString(x.slice(0, 2))
+  const month = uin8ArrayToIntViaString(x.slice(2, 4)) - 1
+  const year = uin8ArrayToIntViaString(x.slice(4, 8))
+  const hour = uin8ArrayToIntViaString(x.slice(8, 10))
+  const minute = uin8ArrayToIntViaString(x.slice(10, 12))
   return new Date(year, month, day, hour, minute)
 }
-const KA_DATETIME = (x: Buffer): Date => {
+const KA_DATETIME = (x: Uint8Array): Date => {
   // ‘yyyyyyymmmmddddd’B + hhhhhmmmmmmsssss’B  (4 Byte)
-  const dateStr = pad(parseInt(x.toString('hex'), 16).toString(2), 32)
+  // const dateStr = pad(parseInt(x.toString('hex'), 16).toString(2), 32)
+  const dateStr = pad(parseInt(uint8ArrayToHex(x), 16).toString(2), 32)
   const year = parseInt(dateStr.slice(0, 7), 2) + 1990
   const month = parseInt(dateStr.slice(7, 11), 2) - 1
   const day = parseInt(dateStr.slice(11, 16), 2)
@@ -30,18 +51,18 @@ const KA_DATETIME = (x: Buffer): Date => {
   return new Date(year, month, day, hour, minute, sec)
 }
 
-const ORG_ID = (x: Buffer): string => {
-  const id = INT(x)
+const ORG_ID = (x: Uint8Array): string => {
+  const id = uint8ArrayToInt(x)
   return orgId(id)
 }
 
-const EFM_PRODUKT = (x: Buffer): EfmProdukt => {
-  const orgId = INT(x.slice(2, 4))
-  const produktNr = INT(x.slice(0, 2))
+const EFM_PRODUKT = (x: Uint8Array): EfmProdukt => {
+  const orgId = uint8ArrayToInt(x.slice(2, 4))
+  const produktNr = uint8ArrayToInt(x.slice(0, 2))
   return efmProdukt(orgId, produktNr)
 }
-const AUSWEIS_TYP = (x: Buffer): string => {
-  const number = STR_INT(x)
+const AUSWEIS_TYP = (x: Uint8Array): string => {
+  const number = uin8ArrayToIntViaString(x)
   return idTypes[number]
 }
 
@@ -52,10 +73,10 @@ export interface DcListe {
   TP: string[]
 }
 
-const DC_LISTE = (x: Buffer): DcListe => {
-  const dc_length = INT(x.slice(1, 2))
-  const typ_DC = HEX(x.slice(2, 3))
-  const pv_org_id = INT(x.slice(3, 5))
+const DC_LISTE = (x: Uint8Array): DcListe => {
+  const dc_length = uint8ArrayToInt(x.slice(1, 2))
+  const typ_DC = uint8ArrayToHex(x.slice(2, 3))
+  const pv_org_id = uint8ArrayToInt(x.slice(3, 5))
   const TP = splitDCList(dc_length, typ_DC, x.slice(5, x.length))
     .map((item) => tarifpunkt(pv_org_id, item))
 
@@ -63,22 +84,22 @@ const DC_LISTE = (x: Buffer): DcListe => {
 }
 
 const EFS_FIELDS = [
-  ['berechtigungs_nr', 4, INT],
+  ['berechtigungs_nr', 4, uint8ArrayToInt],
   ['kvp_organisations_id', 2, ORG_ID],
   // ['produkt_nr', 2, INT],
   ['efm_produkt', 4, EFM_PRODUKT],
   ['valid_from', 4, KA_DATETIME],
   ['valid_to', 4, KA_DATETIME],
-  ['preis', 3, INT],
-  ['sam_seqno', 4, INT],
-  ['lengthList_DC', 1, INT],
+  ['preis', 3, uint8ArrayToInt],
+  ['sam_seqno', 4, uint8ArrayToInt],
+  ['lengthList_DC', 1, uint8ArrayToInt],
   ['Liste_DC', null, DC_LISTE]
 ] as const
 
 export type EfsData = Record<number, InterpreterMapper<(typeof EFS_FIELDS)[number]>>
 
-const EFS_DATA = (x: Buffer): EfsData => {
-  const lengthListDC = INT(x.slice(25, 26))
+const EFS_DATA = (x: Uint8Array): EfsData => {
+  const lengthListDC = uint8ArrayToInt(x.slice(25, 26))
   const t = []
   if (lengthListDC + 26 < x.length) {
     t.push(x.slice(0, lengthListDC + 26))
@@ -93,7 +114,7 @@ const EFS_DATA = (x: Buffer): EfsData => {
   return res
 }
 
-function splitDCList (dcLength: number, typDC: string, data: Buffer): number[] {
+function splitDCList (dcLength: number, typDC: string, data: Uint8Array): number[] {
   // 0x0D 3 Byte CT, CM
   // 0x10 2 Byte Länder,SWT, QDL
   const SEP = parseInt(typDC, 16) === 0x10
@@ -102,7 +123,7 @@ function splitDCList (dcLength: number, typDC: string, data: Buffer): number[] {
   const amount = (dcLength - 3) / SEP
   const res = []
   for (let i = 0; i < amount; i++) {
-    res.push(INT(data.slice(i * SEP, i * SEP + SEP)))
+    res.push(uint8ArrayToInt(data.slice(i * SEP, i * SEP + SEP)))
   }
   return res
 }
@@ -116,48 +137,48 @@ export interface RCT2Block {
   value: string
 }
 
-function interpretRCT2Block (data: Buffer): [RCT2Block, Buffer] {
-  const length = parseInt(data.slice(9, 13).toString(), 10)
+function interpretRCT2Block (data: Uint8Array): [RCT2Block, Uint8Array] {
+  const length = uin8ArrayToIntViaString(data.slice(9, 13))
   const res = {
-    line: parseInt(data.slice(0, 2).toString(), 10),
-    column: parseInt(data.slice(2, 4).toString(), 10),
-    height: parseInt(data.slice(4, 6).toString(), 10),
-    width: parseInt(data.slice(6, 8).toString(), 10),
-    style: parseInt(data.slice(8, 9).toString(), 10),
-    value: data.slice(13, 13 + length).toString()
+    line: uin8ArrayToIntViaString(data.slice(0, 2)),
+    column: uin8ArrayToIntViaString(data.slice(2, 4)),
+    height: uin8ArrayToIntViaString(data.slice(4, 6)),
+    width: uin8ArrayToIntViaString(data.slice(6, 8)),
+    style: uin8ArrayToIntViaString(data.slice(8, 9)),
+    value: uint8ArrayToString(data.slice(13, 13 + length))
   }
   const rem = data.slice(13 + length)
   return [res, rem]
 }
 
-const RCT2_BLOCKS = (x: Buffer): RCT2Block[] => {
+const RCT2_BLOCKS = (x: Uint8Array): RCT2Block[] => {
   return parseContainers(x, interpretRCT2Block)
 }
 
 const A_BLOCK_FIELDS_V2 = [
-  ['certificate', 11, STRING],
-  ['padding', 11, HEX],
-  ['valid_from', 8, STRING],
-  ['valid_to', 8, STRING],
-  ['serial', 8, STRING]
+  ['certificate', 11, uint8ArrayToString],
+  ['padding', 11, uint8ArrayToHex],
+  ['valid_from', 8, uint8ArrayToString],
+  ['valid_to', 8, uint8ArrayToString],
+  ['serial', 8, uint8ArrayToString]
 ] as const
 
 const A_BLOCK_FIELDS_V3 = [
-  ['valid_from', 8, STRING],
-  ['valid_to', 8, STRING],
-  ['serial', 10, STRING]
+  ['valid_from', 8, uint8ArrayToString],
+  ['valid_to', 8, uint8ArrayToString],
+  ['serial', 10, uint8ArrayToString]
 ] as const
 
 export type SingleSBlock = {
   [Key in keyof typeof sBlockTypes]?: string
 }
 
-function interpretSingleSBlock (data: Buffer): [SingleSBlock, Buffer] {
-  const number = parseInt(data.slice(1, 4).toString(), 10)
+function interpretSingleSBlock (data: Uint8Array): [SingleSBlock, Uint8Array] {
+  const number = uin8ArrayToIntViaString(data.slice(1, 4))
   const type = sBlockTypes[number]
-  const length = parseInt(data.slice(4, 8).toString(), 10)
+  const length = uin8ArrayToIntViaString(data.slice(4, 8))
   const res: SingleSBlock = {
-    [type]: data.slice(8, 8 + length).toString()
+    [type]: uint8ArrayToString(data.slice(8, 8 + length))
   }
   const rem = data.slice(8 + length)
   return [res, rem]
@@ -171,19 +192,19 @@ export type AuftraegeSblocks = {
   [key in `auftrag_${number}`]: unknown
 }
 
-const auftraegeSBlocksV2 = (x: Buffer): AuftraegeSblocks => {
+const auftraegeSBlocksV2 = (x: Uint8Array): AuftraegeSblocks => {
   const A_LENGTH = 11 + 11 + 8 + 8 + 8
   return auftraegeSblocks(x, A_LENGTH, A_BLOCK_FIELDS_V2)
 }
 
-const auftraegeSBlocksV3 = (x: Buffer): AuftraegeSblocks => {
+const auftraegeSBlocksV3 = (x: Uint8Array): AuftraegeSblocks => {
   const A_LENGTH = 10 + 8 + 8
   return auftraegeSblocks(x, A_LENGTH, A_BLOCK_FIELDS_V3)
 }
 
-function auftraegeSblocks (x: Buffer, A_LENGTH: number, fields: Readonly<Interpreter[]>): AuftraegeSblocks {
-  const auftrag_count = parseInt(x.slice(0, 1).toString(), 10)
-  const sblock_amount = parseInt(x.slice(A_LENGTH * auftrag_count + 1, A_LENGTH * auftrag_count + 3).toString(), 10)
+function auftraegeSblocks (x: Uint8Array, A_LENGTH: number, fields: Readonly<Interpreter[]>): AuftraegeSblocks {
+  const auftrag_count = uin8ArrayToIntViaString(x.slice(0, 1))
+  const sblock_amount = uin8ArrayToIntViaString(x.slice(A_LENGTH * auftrag_count + 1, A_LENGTH * auftrag_count + 3))
   const sblocks = assignArrayToObj(parseContainers(x.slice(A_LENGTH * auftrag_count + 3), interpretSingleSBlock))
 
   const res: {
@@ -203,28 +224,28 @@ const DATA_FIELDS = [{
   name: 'U_HEAD',
   versions: {
     '01': [
-      ['carrier', 4, STRING],
-      ['auftragsnummer', 8, STRING],
-      ['padding', 12, HEX],
+      ['carrier', 4, uint8ArrayToString],
+      ['auftragsnummer', 8, uint8ArrayToString],
+      ['padding', 12, uint8ArrayToHex],
       ['creation_date', 12, DB_DATETIME], /*, datetime_parser() */
-      ['flags', 1, STRING
+      ['flags', 1, uint8ArrayToString
         /*, lambda x: ",".join(
-                               ['international'] if int(x) & 1 else [] +
-                               ['edited'] if int(x) & 2 else [] +
-                               ['specimen'] if int(x) & 4 else [])), */
+       ['international'] if int(x) & 1 else [] +
+       ['edited'] if int(x) & 2 else [] +
+       ['specimen'] if int(x) & 4 else [])), */
       ],
-      ['language', 2, STRING],
-      ['language_2', 2, STRING]
+      ['language', 2, uint8ArrayToString],
+      ['language_2', 2, uint8ArrayToString]
     ]
   }
 }, {
   name: '0080VU',
   versions: {
     '01': [
-      ['Terminalnummer:', 2, INT],
-      ['SAM_ID', 3, INT],
-      ['persons', 1, INT],
-      ['anzahlEFS', 1, INT],
+      ['Terminalnummer:', 2, uint8ArrayToInt],
+      ['SAM_ID', 3, uint8ArrayToInt],
+      ['persons', 1, uint8ArrayToInt],
+      ['anzahlEFS', 1, uint8ArrayToInt],
       ['VDV_EFS_BLOCK', null, EFS_DATA]
     ]
   }
@@ -232,34 +253,34 @@ const DATA_FIELDS = [{
   name: '1180AI',
   versions: {
     '01': [
-      ['customer?', 7, STRING],
-      ['vorgangs_num', 8, STRING],
-      ['unknown1', 5, STRING],
-      ['unknown2', 2, STRING],
-      ['full_name', 20, STRING],
-      ['adults#', 2, INT],
-      ['children#', 2, INT],
-      ['unknown3', 2, STRING],
-      ['description', 20, STRING],
-      ['ausweis?', 10, STRING],
-      ['unknown4', 7, STRING],
-      ['valid_from', 8, STRING],
-      ['valid_to?', 8, STRING],
-      ['unknown5', 5, STRING],
-      ['start_bf', 20, STRING],
-      ['unknown6', 5, STRING],
-      ['ziel_bf?', 20, STRING],
-      ['travel_class', 1, INT],
-      ['unknown7', 6, STRING],
-      ['unknown8', 1, STRING],
-      ['issue_date', 8, STRING]
+      ['customer?', 7, uint8ArrayToString],
+      ['vorgangs_num', 8, uint8ArrayToString],
+      ['unknown1', 5, uint8ArrayToString],
+      ['unknown2', 2, uint8ArrayToString],
+      ['full_name', 20, uint8ArrayToString],
+      ['adults#', 2, uint8ArrayToInt],
+      ['children#', 2, uint8ArrayToInt],
+      ['unknown3', 2, uint8ArrayToString],
+      ['description', 20, uint8ArrayToString],
+      ['ausweis?', 10, uint8ArrayToString],
+      ['unknown4', 7, uint8ArrayToString],
+      ['valid_from', 8, uint8ArrayToString],
+      ['valid_to?', 8, uint8ArrayToString],
+      ['unknown5', 5, uint8ArrayToString],
+      ['start_bf', 20, uint8ArrayToString],
+      ['unknown6', 5, uint8ArrayToString],
+      ['ziel_bf?', 20, uint8ArrayToString],
+      ['travel_class', 1, uint8ArrayToInt],
+      ['unknown7', 6, uint8ArrayToString],
+      ['unknown8', 1, uint8ArrayToString],
+      ['issue_date', 8, uint8ArrayToString]
     ]
   }
 }, {
   name: '0080BL',
   versions: {
     '02': [
-      ['TBD0', 2, STRING],
+      ['TBD0', 2, uint8ArrayToString],
       /* # '00' bei Schönem WE-Ticket / Ländertickets / Quer-Durchs-Land
       # '00' bei Vorläufiger BC
       # '02' bei Normalpreis Produktklasse C/B, aber auch Ausnahmen
@@ -270,7 +291,7 @@ const DATA_FIELDS = [{
       ['blocks', null, auftraegeSBlocksV2]
     ],
     '03': [
-      ['TBD0', 2, STRING],
+      ['TBD0', 2, uint8ArrayToString],
       ['blocks', null, auftraegeSBlocksV3]
     ]
   }
@@ -279,19 +300,19 @@ const DATA_FIELDS = [{
   versions: {
     '01': [
       ['ausweis_typ', 2, AUSWEIS_TYP],
-      ['ziffer_ausweis', 4, STRING]
+      ['ziffer_ausweis', 4, uint8ArrayToString]
     ],
     '02': [
       ['ausweis_typ', 2, AUSWEIS_TYP],
-      ['ziffer_ausweis', 4, STRING]
+      ['ziffer_ausweis', 4, uint8ArrayToString]
     ]
   }
 }, {
   name: 'U_TLAY',
   versions: {
     '01': [
-      ['layout', 4, STRING],
-      ['amount_rct2_blocks', 4, STR_INT],
+      ['layout', 4, uint8ArrayToString],
+      ['amount_rct2_blocks', 4, uin8ArrayToIntViaString],
       ['rct2_blocks', null, RCT2_BLOCKS]
     ]
   }

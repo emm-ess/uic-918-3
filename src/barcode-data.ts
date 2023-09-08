@@ -1,6 +1,11 @@
 import pako from 'pako'
 
-import BLOCK_TYPES, { DataFieldNames, DataFieldVersions } from './block-types'
+import BLOCK_TYPES, {
+  DataFieldNames,
+  DataFieldVersions,
+  uin8ArrayToIntViaString,
+  uint8ArrayToString,
+} from './block-types'
 import {
   arrayDefinedAndNotEmpty,
   Interpreter,
@@ -11,37 +16,37 @@ import {
 } from './utils'
 
 export interface Header {
-  umid: Buffer
-  mt_version: Buffer
-  rics: Buffer
-  key_id: Buffer
+  umid: string
+  mt_version: string
+  rics: string
+  key_id: string
 }
 
-function getHeader (data: Buffer): Header {
+function getHeader (data: Uint8Array): Header {
   return {
-    umid: data.slice(0, 3),
-    mt_version: data.slice(3, 5),
-    rics: data.slice(5, 9),
-    key_id: data.slice(9, 14)
+    umid: uint8ArrayToString(data.slice(0, 3)),
+    mt_version: uint8ArrayToString(data.slice(3, 5)),
+    rics: uint8ArrayToString(data.slice(5, 9)),
+    key_id: uint8ArrayToString(data.slice(9, 14)),
   }
 }
 
-function getSignature (data: Buffer): Buffer {
+function getSignature (data: Uint8Array): Uint8Array {
   return data.slice(14, 64)
 }
 
-function getTicketDataLength (data: Buffer): Buffer {
-  return data.slice(64, 68)
+function getTicketDataLength (data: Uint8Array): number {
+  return uin8ArrayToIntViaString(data.slice(64, 68))
 }
 
-function getTicketDataRaw (data: Buffer): Buffer {
+function getTicketDataRaw (data: Uint8Array): Uint8Array {
   return data.slice(68, data.length)
 }
 
-function getTicketDataUncompressed (data: Buffer): Buffer {
+function getTicketDataUncompressed (data: Uint8Array): Uint8Array {
   if (data?.length > 0) {
     // return zlib.unzipSync(data)
-    return Buffer.from(pako.inflate(data))
+    return pako.inflate(data)
   } else {
     return data
   }
@@ -52,29 +57,30 @@ export class TicketDataContainer {
   id: DataFieldNames
   version: DataFieldVersions
   length: number
-  container_data: Buffer | InterpreterMapper<any>
+  container_data: Uint8Array | InterpreterMapper<any>
 
-  constructor (data: Buffer) {
-    this.id = data.slice(0, 6).toString() as DataFieldNames
-    this.version = data.slice(6, 8).toString() as DataFieldVersions
-    this.length = parseInt(data.slice(8, 12).toString(), 10)
+  constructor (data: Uint8Array) {
+    this.id = uint8ArrayToString(data.slice(0, 6)) as DataFieldNames
+    this.version = uint8ArrayToString(data.slice(6, 8)) as DataFieldVersions
+    this.length = uin8ArrayToIntViaString(data.slice(8, 12))
     // this.container_data = data.slice(12, data.length)
     this.container_data = this.parseFields(data.slice(12, data.length))
   }
 
-  parseFields (data: Buffer): InterpreterMapper<any> | Buffer {
+  parseFields (data: Uint8Array): InterpreterMapper<any> | Uint8Array {
     const fields = getBlockTypeFieldsByIdAndVersion(this.id, this.version)
     if (fields != null) {
       return interpretField(data, fields)
     } else {
+      debugger
       myConsoleLog(`ALERT: Container with id ${this.id} and version ${this.version} isn't implemented for TicketContainer ${this.id}.`)
       return data
     }
   }
 }
 
-function interpretTicketContainer (data: Buffer): [TicketDataContainer, Buffer] {
-  const length = parseInt(data.slice(8, 12).toString(), 10)
+function interpretTicketContainer (data: Uint8Array): [TicketDataContainer, Uint8Array] {
+  const length = uin8ArrayToIntViaString(data.slice(8, 12))
   const remainder = data.slice(length, data.length)
   const container = new TicketDataContainer(data.slice(0, length))
   return [container, remainder]
@@ -92,14 +98,14 @@ function getBlockTypeFieldsByIdAndVersion (id: DataFieldNames, version: DataFiel
 export interface Ticket {
   isSignatureValid?: boolean | null
   header: Header
-  signature: Buffer
-  ticketDataLength: Buffer
-  ticketDataRaw: Buffer
-  ticketDataUncompressed: Buffer
+  signature: Uint8Array
+  ticketDataLength: number
+  ticketDataRaw: Uint8Array
+  ticketDataUncompressed: Uint8Array
   ticketContainers: TicketDataContainer[]
 }
 
-export default function (data: Buffer): Ticket {
+export function convertBarcodeData (data: Uint8Array): Ticket {
   const header = getHeader(data)
   const signature = getSignature(data)
   const ticketDataLength = getTicketDataLength(data)

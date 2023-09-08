@@ -1,26 +1,17 @@
-import { ZXing } from './barcode-reader'
-import interpretBarcode, { type Ticket } from './barcode-data'
-import fixingZXing from './fixingZXing'
-import { loadFileOrBuffer } from './checkInput'
+import { convertBarcodeData } from './barcode-data'
+// import { verifyTicketSignature } from './check_signature'
 
-import { verifyTicketSignature } from './check_signature'
+export {type Ticket} from './barcode-data'
 
-export async function checkSignature (ticket: Ticket, verifyTicket: boolean) {
-  if (verifyTicket) {
-    ticket.isSignatureValid = await verifyTicketSignature(ticket)
-  }
-}
+// const DEFAULT_OPTIONS = {
+//   verifySignature: false
+// }
 
-export async function readBarcode (input?: string | Buffer | unknown, options = {}) {
-  const defaults = {
-    verifySignature: false
-  }
-  const opts = Object.assign({}, defaults, options)
+export async function barcodeDataToTicket (input: Uint8Array) {
+  // const opts = Object.assign({}, DEFAULT_OPTIONS, options)
 
-  const imageData = await loadFileOrBuffer(input)
-  const readCode = await ZXing(imageData)
-  const readCodeFixed = fixingZXing(readCode.raw)
-  const ticket = interpretBarcode(readCodeFixed)
-  await checkSignature(ticket, opts.verifySignature)
-  return ticket
+  return convertBarcodeData(input)
+  // if (opts.verifySignature) {
+  //   ticket.isSignatureValid = await verifyTicketSignature(ticket)
+  // }
 }

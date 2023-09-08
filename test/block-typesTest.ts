@@ -1,7 +1,7 @@
 import chai from 'chai'
 import chaiThings from 'chai-things'
 
-import bt from '../src/block-types'
+import bt, {uint8ArrayToHex} from '../src/block-types'
 
 chai.use(chaiThings)
 // chai.use(require('chai-properties'))
@@ -30,10 +30,8 @@ describe('block-types', () => {
     })
     describe('HEX', () => {
       it('should return a hexadecimal encoded string representation from a Buffer', () => {
-        const dataTypeArr = bt[0].versions['01'][2]
-        const res = dataTypeArr[2]
         const testValue = '0123456789abcdef'
-        res(Buffer.from(testValue, 'hex')).should.be.equal(testValue)
+        uint8ArrayToHex(Buffer.from(testValue, 'hex')).should.be.equal(testValue)
       })
     })
     describe('STR_INT', () => {

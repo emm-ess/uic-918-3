@@ -1,28 +1,26 @@
 import chai from 'chai'
-
 import { dummyTicket } from './helper'
-
-import interpretBarcode, {type TicketDataContainer} from '../src/barcode-data'
+import{convertBarcodeData, type TicketDataContainer} from '../src/barcode-data'
 chai.should()
 
 describe('barcode-data', () => {
   describe('barcode-data.interpret', () => {
     it('should return an object', () => {
       const ticket = dummyTicket('U_HEAD', '01', 'Hi!')
-      interpretBarcode(ticket).should.be.an('object')
+      convertBarcodeData(ticket).should.be.an('object')
     })
     it('should return an empty array if input param is an empty buffer.', () => {
       // @ts-ignore
-      interpretBarcode(Buffer.from('')).ticketContainers.should.be.an('array')
+      convertBarcodeData(Buffer.from('')).ticketContainers.should.be.an('array')
       // @ts-ignore
-      interpretBarcode(Buffer.from('')).ticketContainers.should.be.empty // eslint-disable-line no-unused-expressions
+      convertBarcodeData(Buffer.from('')).ticketContainers.should.be.empty // eslint-disable-line no-unused-expressions
     })
 
     describe('on unknown data fields', () => {
       let results!: TicketDataContainer[]
       beforeEach((done) => {
         const ticket = dummyTicket('MYID!!', '01', 'Test')
-        results = interpretBarcode(ticket).ticketContainers
+        results = convertBarcodeData(ticket).ticketContainers
         done()
       })
       it('should ignore unkown data fields', () => {
@@ -40,7 +38,7 @@ describe('barcode-data', () => {
       let results!: TicketDataContainer[]
       beforeEach((done) => {
         const ticket = dummyTicket('U_HEAD', '03', 'Test')
-        results = interpretBarcode(ticket).ticketContainers
+        results = convertBarcodeData(ticket).ticketContainers
         done()
       })
       it('should ignore unkown versions of data fields', () => {
