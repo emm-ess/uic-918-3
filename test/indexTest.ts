@@ -1,6 +1,6 @@
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
-import fs from 'fs'
+import fs from 'node:fs'
 
 import {readBarcode} from '../src'
 

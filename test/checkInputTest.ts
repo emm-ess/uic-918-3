@@ -1,10 +1,10 @@
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 
-import path from 'path'
-import fs from 'fs'
+import path from 'node:path'
+import fs from 'node:fs'
 
-import { fileExists, fileWillExists, loadFileOrBuffer, readFileAsync } from '../src/checkInput'
+import { fileExists, loadFileOrBuffer, readFileAsync } from '../src/checkInput'
 
 chai.use(chaiAsPromised)
 chai.should()
@@ -36,25 +36,9 @@ describe('checkInput', () => {
     })
   })
 
-  describe('fileWillExists', () => {
-    it('should return false if no file path given', () => {
-      return fileWillExists().should.be.rejected // eslint-disable-line no-unused-expressions
-    })
-    it('should return false if a file with relative path isn\'t found', () => {
-      return fileWillExists(filePath.relative_false).should.be.rejected // eslint-disable-line no-unused-expressions
-    })
-    it('should return true if a file with relative path is found', () => {
-      return fileWillExists(filePath.relative_true).should.eventually.equal(filePath.relative_true) // eslint-disable-line no-unused-expressions
-    })
-    it('should return false if a file with absolute path isn\'t found', () => {
-      return fileWillExists(filePath.absolute_false).should.be.rejected // eslint-disable-line no-unused-expressions
-    })
-    it('should return true if a file with absolute path is found', () => {
-      return fileWillExists(filePath.absolute_true).should.eventually.equal(filePath.absolute_true)// eslint-disable-line no-unused-expressions
-    })
-  })
   describe('readFileAsync', () => {
     it('should return false if no file path given', () => {
+      // @ts-ignore
       return readFileAsync().should.be.rejected // eslint-disable-line no-unused-expressions
     })
     it('should return false if a file with relative path isn\'t found', () => {

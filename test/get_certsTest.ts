@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import chai from 'chai'
 
 import { updateLocalCerts } from '../src/get_certs'
