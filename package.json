@@ -6,10 +6,9 @@
   "scripts": {
     "standard-fix": "ts-standard --fix",
     "test": "NODE_ENV=test nyc ts-mocha test/*Test.ts",
-    "build": "tsc",
     "check-types": "tsc --noEmit",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "postinstall": "ts-node ./updateCerts"
+    "postinstall": "npx -y ts-node ./updateCerts"
   },
   "author": "Francis Doege",
   "license": "MIT",
