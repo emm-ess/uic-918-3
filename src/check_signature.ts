@@ -1,7 +1,8 @@
 import rs from 'jsrsasign'
-import { Header, Ticket } from './barcode-data'
+import type { Header, Ticket } from './barcode-data'
 import {uint8ArrayToHex} from './block-types'
 
+// @ts-ignore
 import keys from '../keys.json'
 
 export interface Certificate {

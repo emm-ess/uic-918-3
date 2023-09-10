@@ -1,15 +1,15 @@
 import pako from 'pako'
 
 import BLOCK_TYPES, {
-  DataFieldNames,
-  DataFieldVersions,
+  type DataFieldNames,
+  type DataFieldVersions,
   uin8ArrayToIntViaString,
   uint8ArrayToString,
 } from './block-types'
 import {
   arrayDefinedAndNotEmpty,
-  Interpreter,
-  InterpreterMapper,
+  type Interpreter,
+  type InterpreterMapper,
   interpretField,
   myConsoleLog,
   parseContainers

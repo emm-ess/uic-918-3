@@ -1,5 +1,5 @@
-import { assignArrayToObj, interpretField, parseContainers, pad, Interpreter, InterpreterMapper } from './utils'
-import { EfmProdukt, efmProdukt, idTypes, orgId, sBlockTypes, tarifpunkt } from './enums'
+import { assignArrayToObj, interpretField, parseContainers, pad, type Interpreter, type InterpreterMapper } from './utils'
+import { type EfmProdukt, efmProdukt, idTypes, orgId, sBlockTypes, tarifpunkt } from './enums'
 
 // ################
 // DATA TYPES

@@ -11,7 +11,7 @@ keys.json
 ###########################
 release
 build
-dist*
+# dist*
 licenses*
 www
 .tmp
