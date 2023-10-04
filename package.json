@@ -3,13 +3,17 @@
   "version": "0.4.1",
   "description": "Package for decoding and parsing barcodes according to UIC-918.3 specification, which are used commonly on public transport online tickets.",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "standard-fix": "ts-standard --fix",
     "test": "NODE_ENV=test nyc ts-mocha test/*Test.ts",
-    "build": "tsc",
+    "build": "rimraf dist && tsc",
     "check-types": "tsc --noEmit",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "postinstall": "ts-node ./updateCerts"
+    "postinstall": "ts-node ./updateCerts",
+    "example": "npm run example:update && npm run example:serve",
+    "example:update": "npm run build && rollup dist/index.js --sourcemap --plugin node-resolve --format es --name \"uic-918-3\" --file example/lib.js",
+    "example:serve": "npx http-server -y -o /example"
   },
   "author": "Francis Doege",
   "license": "MIT",
@@ -23,7 +27,9 @@
     "src": "src"
   },
   "devDependencies": {
-    "@tsconfig/node18": "^18.2.1",
+    "@rollup/plugin-node-resolve": "^15.2.1",
+    "@tsconfig/recommended": "^1.0.3",
+    "@tsconfig/strictest": "^2.0.2",
     "@types/chai": "^4.3.6",
     "@types/chai-as-promised": "^7.1.6",
     "@types/chai-things": "^0.0.36",
@@ -38,6 +44,7 @@
     "coveralls": "^3.1.1",
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
+    "rollup": "^3.29.4",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.1",
     "ts-standard": "^12.0.2",

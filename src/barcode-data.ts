@@ -1,4 +1,4 @@
-import pako from 'pako'
+import * as pako from 'pako'
 
 import BLOCK_TYPES, {
   DataFieldNames,
@@ -89,7 +89,7 @@ function interpretTicketContainer (data: Uint8Array): [TicketDataContainer, Uint
 function getBlockTypeFieldsByIdAndVersion (id: DataFieldNames, version: DataFieldVersions): Interpreter[] | null {
   const types = BLOCK_TYPES.filter(typ => (typ.name === id))
   if (arrayDefinedAndNotEmpty(types)) {
-    return types[0].versions[version]
+    return types[0]!.versions[version]
   } else {
     return null
   }

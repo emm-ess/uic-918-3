@@ -48,7 +48,9 @@ export function parseContainers <R> (data: Uint8Array, f: (arg: Uint8Array) => [
 export function myConsoleLog (str: string | unknown): void {
   /* following if statement is never fired up during test, so should be ignored */
   /* istanbul ignore if  */
-  if (process.env.NODE_ENV !== 'test') { console.error(str) }
+  if (process.env['NODE_ENV'] !== 'test') {
+    console.error(str)
+  }
 }
 
 export function pad (number: number | string, length: number): string {

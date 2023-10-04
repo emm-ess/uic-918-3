@@ -1,12 +1,12 @@
 import { ORG_ID, EFM_PRODUKTE, TARIFPUNKTE } from './ka-data'
 
 export function orgId (orgId: number): string {
-  // @ts-expect-error
+  // @ts-ignore
   return ORG_ID[orgId] || orgId.toString()
 }
 
 export function tarifpunkt (orgId: number, tp: number): string {
-  // @ts-expect-error
+  // @ts-ignore
   return TARIFPUNKTE[orgId]?.[tp] || tp.toString()
 }
 
@@ -18,7 +18,7 @@ export interface EfmProdukt {
 export function efmProdukt (organizationId: number, produktId: number): EfmProdukt {
   return {
     kvp_organisations_id: orgId(organizationId),
-    // @ts-expect-error
+    // @ts-ignore
     produkt_nr: EFM_PRODUKTE[organizationId]?.[produktId] || produktId.toString()
   }
 }

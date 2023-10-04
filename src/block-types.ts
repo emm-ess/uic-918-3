@@ -61,9 +61,9 @@ const EFM_PRODUKT = (x: Uint8Array): EfmProdukt => {
   const produktNr = uint8ArrayToInt(x.slice(0, 2))
   return efmProdukt(orgId, produktNr)
 }
-const AUSWEIS_TYP = (x: Uint8Array): string => {
+const AUSWEIS_TYP = (x: Uint8Array): string | null => {
   const number = uin8ArrayToIntViaString(x)
-  return idTypes[number]
+  return idTypes[number] ?? null
 }
 
 export interface DcListe {
@@ -175,7 +175,7 @@ export type SingleSBlock = {
 
 function interpretSingleSBlock (data: Uint8Array): [SingleSBlock, Uint8Array] {
   const number = uin8ArrayToIntViaString(data.slice(1, 4))
-  const type = sBlockTypes[number]
+  const type = sBlockTypes[number] as string
   const length = uin8ArrayToIntViaString(data.slice(4, 8))
   const res: SingleSBlock = {
     [type]: uint8ArrayToString(data.slice(8, 8 + length))

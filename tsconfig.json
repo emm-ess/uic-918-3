@@ -1,8 +1,14 @@
 {
-  "extends": "@tsconfig/node18/tsconfig.json",
-  "include": ["src/", "types/*.d.ts"],
+  "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/recommended/tsconfig.json"],
+  "include": ["src/**/*"],
   "compilerOptions": {
+    "rootDir": "./src",
+    "sourceMap": true,
+    "lib": ["DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "declaration": true
   }
 }

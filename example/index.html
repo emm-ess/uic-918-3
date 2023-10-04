@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>UIC-918-3 Example</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5em;
+            height: calc(100% - 20px);
+            margin: 10px;
+        }
+
+        button {
+            align-self: flex-start;
+        }
+
+        label {
+            margin: 0.75em 0 0;
+        }
+
+        #output {
+            flex: 1 1 auto;
+        }
+
+        #video-wrapper {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+<h1>Ticket Scanner for Web example</h1>
+
+<button id="button">Scan</button>
+
+<label for="output">Result:</label>
+<textarea id="output" readonly></textarea>
+
+<div id="video-wrapper" style="display: none;">
+    <video id="video"></video>
+</div>
+
+<script defer="defer" type="module" src="./main.js"></script>
+</body>
+</html>
